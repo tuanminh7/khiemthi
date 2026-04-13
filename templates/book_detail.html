@@ -1,0 +1,103 @@
+{% extends "base.html" %}
+
+{% block content %}
+<section class="detail-layout" aria-labelledby="book-title">
+    <div class="detail-cover">
+        <img src="{{ book.cover_url }}" alt="Bìa sách {{ book.title }}">
+    </div>
+
+    <div class="detail-content">
+        <p class="eyebrow">{{ book.category }}</p>
+        <h1 id="book-title">{{ book.title }}</h1>
+        <p class="detail-author">Tác giả: {{ book.author }}</p>
+        <p class="detail-description">{{ book.description }}</p>
+
+        <div class="detail-meta" aria-label="Thông tin bổ sung">
+            <span>Nguồn: {{ book.source_type|upper }}</span>
+            <span>Ngôn ngữ: {{ book.language|upper }}</span>
+            <span>Trạng thái Audio: {{ book.audio_status or "chưa tạo" }}</span>
+            {% if book.audio_total_parts %}
+                <span>Tiến độ: {{ book.audio_completed_parts or 0 }}/{{ book.audio_total_parts }} phần</span>
+            {% endif %}
+        </div>
+
+        {% if book.audio_status in ["queued", "processing", "ready"] %}
+            <section class="progress-panel" aria-label="Tiến trình tạo âm thanh">
+                <div class="progress-meta">
+                    <strong>Tiến trình Audio</strong>
+                    <span aria-hidden="true">{{ book.audio_progress or 0 }}%</span>
+                </div>
+                <div class="progress-track" role="progressbar" aria-valuenow="{{ book.audio_progress or 0 }}" aria-valuemin="0" aria-valuemax="100">
+                    <div class="progress-fill" style="width: {{ book.audio_progress or 0 }}%;"></div>
+                </div>
+                {% if book.audio_estimated_minutes %}
+                    <small>Ước tính thời lượng đọc: khoảng {{ book.audio_estimated_minutes }} phút.</small>
+                {% endif %}
+            </section>
+        {% endif %}
+
+        <div class="action-row">
+            <a class="button button-primary" href="{{ book.drive_view_url }}" target="_blank" rel="noreferrer">Mở trên Drive</a>
+            <a class="button button-secondary" href="{{ book.drive_download_url }}" target="_blank" rel="noreferrer">Tải tệp</a>
+            <form method="post" action="{{ url_for('main.generate_audio', book_id=book.id) }}">
+                <input type="hidden" name="next" value="{{ url_for('main.book_detail', book_id=book.id) }}">
+                <button
+                    class="button button-primary"
+                    type="submit"
+                    {% if book.audio_status in ["queued", "processing"] %}disabled{% endif %}
+                    aria-label="Bắt đầu tạo âm thanh cho sách này"
+                >
+                    {% if book.audio_status == "ready" %}Tạo lại Audio{% else %}Tạo Audio{% endif %}
+                </button>
+            </form>
+        </div>
+
+        {% if book.audio_status in ["queued", "processing"] %}
+            <p class="inline-note" role="status">Audio đang được tạo trong nền. Bạn có thể quay lại sau hoặc tải lại trang này.</p>
+        {% endif %}
+
+        {% if book.audio_parts %}
+            <section class="audio-panel" aria-labelledby="audio-title">
+                <p class="eyebrow" id="audio-title">Sách nói (Audio)</p>
+                <div class="audio-part-list">
+                    {% for part in book.audio_parts %}
+                        <article class="audio-part">
+                            <strong>{{ part.title }}</strong>
+                            <audio controls preload="none" class="audio-player" aria-label="Trình phát âm thanh cho {{ part.title }}">
+                                <source src="{{ part.url }}" type="audio/mpeg">
+                                Trình duyệt của bạn không hỗ trợ trình phát âm thanh.
+                            </audio>
+                        </article>
+                    {% endfor %}
+                </div>
+            </section>
+        {% endif %}
+
+        {% if book.audio_error %}
+            <p class="inline-error" role="alert">{{ book.audio_error }}</p>
+        {% endif %}
+    </div>
+</section>
+
+{% if book.audio_status in ["queued", "processing"] %}
+    <script>
+        window.setTimeout(() => window.location.reload(), 5000);
+    </script>
+{% endif %}
+
+<section class="preview-panel" aria-labelledby="preview-title">
+    <div class="section-head">
+        <div>
+            <p class="eyebrow">Xem nhanh</p>
+            <h2 id="preview-title">Khung xem trước từ Google Drive</h2>
+        </div>
+    </div>
+
+    <iframe
+        title="Xem trước nội dung sách {{ book.title }}"
+        src="{{ book.drive_preview_url }}"
+        class="drive-preview"
+        allow="autoplay">
+    </iframe>
+</section>
+{% endblock %}

@@ -1,0 +1,8 @@
+.env
+__pycache__/
+*.pyc
+static/audio/*
+!static/audio/.gitkeep
+*.mp3
+.venv/
+venv/

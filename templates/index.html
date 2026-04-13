@@ -1,0 +1,46 @@
+{% extends "base.html" %}
+
+{% block content %}
+<section class="hero" aria-labelledby="hero-title">
+    <div>
+        <p class="eyebrow">Thư viện AI</p>
+        <h1 id="hero-title">Thư viện sách nói để mở rộng với TTS, OCR và Gemini Vision.</h1>
+        <p class="hero-copy">
+            Ban đầu quản trị viên chỉ cần thêm thông tin sách và link Google Drive. Về sau chúng ta có thể nối
+            thêm các mô-đun đọc PDF, tạo âm thanh, OCR nội bộ và Gemini cho máy ảnh.
+        </p>
+    </div>
+    <div class="action-row">
+        <a class="button button-primary" href="{{ url_for('main.admin_books') }}">Thêm sách mới</a>
+    </div>
+</section>
+
+<section class="section-head" aria-labelledby="catalog-title">
+    <div>
+        <p class="eyebrow">Danh mục</p>
+        <h2 id="catalog-title">{{ books|length }} cuốn sách hiện có</h2>
+    </div>
+</section>
+
+<section class="book-grid" aria-label="Danh sách sách">
+    {% for book in books %}
+        <article class="book-card">
+            <img src="{{ book.cover_url }}" alt="Bìa sách {{ book.title }}">
+            <div class="book-card-body">
+                <p class="book-category">{{ book.category }}</p>
+                <h3>{{ book.title }}</h3>
+                <p class="book-author">{{ book.author }}</p>
+                <p class="book-description">{{ book.description }}</p>
+                <a class="button button-secondary" href="{{ url_for('main.book_detail', book_id=book.id) }}" aria-label="Xem chi tiết sách {{ book.title }}">
+                    Xem chi tiết
+                </a>
+            </div>
+        </article>
+    {% else %}
+        <div class="empty-state">
+            <h3>Chưa có dữ liệu sách</h3>
+            <p>Bạn có thể vào trang quản trị để thêm cuốn sách đầu tiên bằng đường dẫn Google Drive.</p>
+        </div>
+    {% endfor %}
+</section>
+{% endblock %}

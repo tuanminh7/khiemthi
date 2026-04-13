@@ -1,0 +1,101 @@
+{% extends "base.html" %}
+
+{% block content %}
+<section class="section-head" aria-labelledby="admin-title">
+    <div>
+        <p class="eyebrow">Quản trị viên</p>
+        <h1 id="admin-title">Thêm sách mới bằng Google Drive</h1>
+        <p class="hero-copy">
+            Sau khi lưu sách, hệ thống sẽ tự đưa sách vào hàng đợi tạo âm thanh nên bạn không cần chờ.
+            Hiện hỗ trợ Google Docs, PDF, DOCX và TXT nếu tệp có quyền xem công khai.
+        </p>
+    </div>
+</section>
+
+<section class="admin-layout">
+    <form class="panel form-grid" method="post" aria-label="Biểu mẫu thêm sách mới">
+        <label>
+            <span>Tiêu đề sách</span>
+            <input type="text" name="title" placeholder="Ví dụ: Nhà Giả Kim" required>
+        </label>
+
+        <label>
+            <span>Tác giả</span>
+            <input type="text" name="author" placeholder="Ví dụ: Paulo Coelho">
+        </label>
+
+        <label>
+            <span>Thể loại</span>
+            <input type="text" name="category" placeholder="Tiểu thuyết, kỹ năng, học tập...">
+        </label>
+
+        <label>
+            <span>Loại nguồn</span>
+            <select name="source_type" aria-label="Chọn loại tệp nguồn">
+                <option value="auto">Tự động nhận diện</option>
+                <option value="pdf">PDF</option>
+                <option value="docx">DOCX</option>
+                <option value="txt">TXT</option>
+            </select>
+        </label>
+
+        <label>
+            <span>Ngôn ngữ</span>
+            <input type="text" name="language" value="vi" placeholder="vi">
+        </label>
+
+        <label>
+            <span>Đường dẫn ảnh bìa</span>
+            <input type="url" name="cover_url" placeholder="https://...">
+        </label>
+
+        <label class="full-span">
+            <span>Link Google Drive</span>
+            <input type="text" name="drive_url" placeholder="https://drive.google.com/file/d/.../view" required>
+        </label>
+
+        <label class="full-span">
+            <span>Mô tả nội dung</span>
+            <textarea name="description" rows="5" placeholder="Tóm tắt nội dung, đối tượng phù hợp, ghi chú TTS..."></textarea>
+        </label>
+
+        <div class="full-span">
+            <button class="button button-primary" type="submit">Lưu sách và Tạo Audio</button>
+        </div>
+    </form>
+
+    <aside class="panel admin-side" aria-labelledby="side-title">
+        <h2 id="side-title">Danh sách hiện tại</h2>
+        <div class="admin-list" role="list">
+            {% for book in books %}
+                <div class="admin-list-item" role="listitem">
+                    <a href="{{ url_for('main.book_detail', book_id=book.id) }}" aria-label="Xem chi tiết sách {{ book.title }}">
+                        <strong>{{ book.title }}</strong>
+                        <span style="display: block; font-size: 0.9rem; color: var(--muted);">{{ book.author }}</span>
+                        <small style="display: block; margin-top: 4px;">{{ book.source_type|upper }} - {{ book.category }}</small>
+                    </a>
+                    <div class="admin-actions">
+                        <small aria-label="Trạng thái âm thanh">
+                            Audio: {{ book.audio_status or "chưa tạo" }}
+                            {% if book.audio_progress %} - {{ book.audio_progress }}%{% endif %}
+                        </small>
+                        <form method="post" action="{{ url_for('main.generate_audio', book_id=book.id) }}">
+                            <input type="hidden" name="next" value="{{ url_for('main.admin_books') }}">
+                            <button
+                                class="button button-secondary button-small"
+                                type="submit"
+                                {% if book.audio_status in ["queued", "processing"] %}disabled{% endif %}
+                                aria-label="Tạo lại âm thanh cho {{ book.title }}"
+                            >
+                                {% if book.audio_status == "ready" %}Làm mới Audio{% else %}Tạo Audio{% endif %}
+                            </button>
+                        </form>
+                    </div>
+                </div>
+            {% else %}
+                <p>Chưa có cuốn sách nào được thêm.</p>
+            {% endfor %}
+        </div>
+    </aside>
+</section>
+{% endblock %}

@@ -1,0 +1,103 @@
+nội dung chức năng
+Chuyển văn bản → giọng nói tự nhiên (AI)
+ Hỗ trợ đọc: PDF, web, sách, tài liệu học tập Có nhiều giọng đọc, tốc độ tùy chỉnh Phù hợp: học sinh, sinh viên,
+Dùng camera để: Đọc văn bản trên giấy Nhận diện đồ vật, tiền, người Tự động đọc bằng giọng nói( sửa dụng gemini model 2.5)
+
+TTS giọng tự nhiên (AI)
+Đọc PDF / web / tài liệu
+Camera đọc chữ + nhận diện vật
+Tất cả dùng Gemini 2.5
+
+Mình sẽ thiết kế cho bạn kiến trúc chuẩn + cách dùng Gemini đúng cách (cực quan trọng).
+
+🧠 Kiến trúc app dùng Gemini 2.5
+🔥 Điểm mạnh của Google Gemini 2.5:
+Hiểu text + ảnh + context
+OCR tốt (không cần Tesseract)
+Mô tả hình ảnh cực mạnh
+
+👉 Bạn có thể bỏ luôn pytesseract + YOLO → dùng 1 model duy nhất
+
+🧩 Module 1: Text → Speech (AI tự nhiên)
+❗ Lưu ý:
+
+Gemini KHÔNG phải TTS trực tiếp
+→ bạn cần kết hợp:
+
+👉 Giải pháp chuẩn:
+Gemini → xử lý nội dung
+TTS:
+Google TTS / ElevenLabs (giọng xịn hơn)
+💻 Flow:
+Text/PDF → Gemini xử lý → tối ưu nội dung → TTS → audio
+🧪 Code mẫu (Gemini + TTS)
+import google.generativeai as genai
+from gtts import gTTS
+
+genai.configure(api_key="YOUR_API_KEY")
+
+model = genai.GenerativeModel("gemini-1.5-pro")
+
+text = "Giải thích nội dung này đơn giản cho học sinh"
+response = model.generate_content(text)
+
+clean_text = response.text
+
+tts = gTTS(clean_text, lang='vi')
+tts.save("output.mp3")
+📄 Module 2: Đọc PDF / tài liệu
+💡 Ý tưởng:
+Trích xuất text → gửi Gemini:
+Tóm tắt
+Giải thích dễ hiểu
+Sau đó đọc
+💻 Flow:
+PDF → extract text → Gemini → TTS
+📷 Module 3: Camera đọc chữ (OCR bằng Gemini)
+
+👉 Đây là phần “xịn” nhất
+
+💻 Code mẫu:
+from PIL import Image
+import google.generativeai as genai
+
+genai.configure(api_key="YOUR_API_KEY")
+
+model = genai.GenerativeModel("gemini-1.5-pro")
+
+img = Image.open("image.jpg")
+
+response = model.generate_content([
+    "Đọc toàn bộ văn bản trong ảnh này",
+    img
+])
+
+print(response.text)
+
+👉 Sau đó:
+
+response.text → TTS → đọc lên
+🧠 Module 4: Nhận diện vật thể + mô tả
+💻 Ví dụ prompt:
+response = model.generate_content([
+    "Mô tả chi tiết những gì có trong ảnh cho người khiếm thị",
+    img
+])
+
+👉 Output sẽ kiểu:
+
+"Có một chiếc bàn, trên đó có laptop..."
+→ đọc lên cho người dùng
+💰 Module 5: Nhận diện tiền (rất hay)
+response = model.generate_content([
+    "Đây là loại tiền gì? Mệnh giá bao nhiêu?",
+    img
+])
+🎯 Tổng kiến trúc cuối
+[Frontend]
+   ↓
+[Flask Backend]
+   ├── Text → Gemini → TTS
+   ├── PDF → Gemini → TTS
+   ├── Camera → Gemini (OCR) → TTS
+   Camera → Gemini (Vision) → TTS

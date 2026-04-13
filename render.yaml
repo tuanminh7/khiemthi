@@ -1,0 +1,33 @@
+services:
+  - type: web
+    name: doc-sach
+    runtime: python
+    plan: starter
+    buildCommand: pip install -r requirements.txt
+    startCommand: gunicorn app:app -c gunicorn.conf.py
+    healthCheckPath: /healthz
+    envVars:
+      - key: SECRET_KEY
+        generateValue: true
+      - key: FLASK_DEBUG
+        value: "0"
+      - key: APP_TITLE
+        value: Thu Vien Sach Noi AI
+      - key: DATA_FILE
+        value: /var/data/books.json
+      - key: AUDIO_DIR
+        value: /var/data/audio
+      - key: AUDIO_PUBLIC_URL
+        value: /media/audio
+      - key: RECOVER_AUDIO_JOBS_ON_STARTUP
+        value: "1"
+      - key: WEB_CONCURRENCY
+        value: "1"
+      - key: GUNICORN_THREADS
+        value: "4"
+      - key: GUNICORN_TIMEOUT
+        value: "300"
+    disk:
+      name: doc-sach-data
+      mountPath: /var/data
+      sizeGB: 10
