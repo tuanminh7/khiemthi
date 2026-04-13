@@ -4,7 +4,7 @@ services:
     runtime: python
     plan: starter
     buildCommand: pip install -r requirements.txt
-    startCommand: gunicorn app:app -c gunicorn.conf.py
+    startCommand: gunicorn wsgi:app -c gunicorn.conf.py
     healthCheckPath: /healthz
     envVars:
       - key: SECRET_KEY
