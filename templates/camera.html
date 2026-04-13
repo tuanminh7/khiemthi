@@ -1,0 +1,182 @@
+{% extends "base.html" %}
+
+{% block content %}
+<section class="hero" aria-labelledby="camera-title">
+    <div>
+        <p class="eyebrow">Camera AI</p>
+        <h1 id="camera-title">Mở camera và nhận diện vật thể ngay trên trình duyệt</h1>
+        <p class="hero-copy">
+            Trang này dùng camera của thiết bị để chụp ảnh, gửi ảnh lên backend Flask, sau đó nhờ Gemini mô tả vật thể,
+            đọc chữ trong ảnh và cảnh báo những điều cần lưu ý.
+        </p>
+    </div>
+    <div class="action-row">
+        <button class="button button-primary" type="button" id="start-camera">Bật camera</button>
+        <button class="button button-secondary" type="button" id="capture-frame" disabled>Chụp và phân tích</button>
+        <button class="button button-secondary" type="button" id="stop-camera" disabled>Dừng camera</button>
+    </div>
+</section>
+
+{% if not vision_ready %}
+    <section class="flash flash-error" role="alert">
+        Chưa thấy `GEMINI_API_KEY` trong `.env`, vì vậy trang này chưa thể nhận diện ảnh. Bạn vẫn có thể mở camera để kiểm tra giao diện.
+    </section>
+{% endif %}
+
+<section class="camera-layout">
+    <article class="panel camera-stage">
+        <div class="camera-frame">
+            <video id="camera-video" autoplay playsinline muted></video>
+            <div class="camera-empty" id="camera-empty">Nhấn "Bật camera" để cấp quyền truy cập camera.</div>
+        </div>
+        <canvas id="capture-canvas" hidden></canvas>
+        <p class="camera-status" id="camera-status">Sẵn sàng khởi động camera.</p>
+    </article>
+
+    <aside class="panel camera-panel">
+        <label class="camera-label" for="vision-prompt">Nhấn mạnh bổ sung (tùy chọn)</label>
+        <textarea id="vision-prompt" rows="5" placeholder="Ví dụ: Hãy mô tả các đồ vật trên bàn và đọc phần chữ chính trong ảnh."></textarea>
+
+        <div class="camera-snapshot-shell">
+            <p class="eyebrow">Ảnh vừa chụp</p>
+            <img id="snapshot-preview" alt="Ảnh chụp từ camera sẽ hiện ở đây." hidden>
+            <p class="camera-empty-text" id="snapshot-empty">Chưa có ảnh nào được chụp.</p>
+        </div>
+
+        <div class="camera-result-shell">
+            <p class="eyebrow">Kết quả nhận diện</p>
+            <div class="camera-result" id="vision-result">
+                Hệ thống sẽ hiện mô tả vật thể, văn bản và cảnh báo sau khi bạn chụp ảnh.
+            </div>
+            <small class="camera-hint">Model đang dùng: {{ vision_model }}</small>
+        </div>
+    </aside>
+</section>
+
+<script>
+    const video = document.getElementById("camera-video");
+    const canvas = document.getElementById("capture-canvas");
+    const startButton = document.getElementById("start-camera");
+    const captureButton = document.getElementById("capture-frame");
+    const stopButton = document.getElementById("stop-camera");
+    const statusNode = document.getElementById("camera-status");
+    const resultNode = document.getElementById("vision-result");
+    const promptNode = document.getElementById("vision-prompt");
+    const emptyNode = document.getElementById("camera-empty");
+    const snapshotPreview = document.getElementById("snapshot-preview");
+    const snapshotEmpty = document.getElementById("snapshot-empty");
+
+    let stream;
+
+    async function startCamera() {
+        if (stream) {
+            return stream;
+        }
+
+        if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+            throw new Error("Trình duyệt này không hỗ trợ mở camera.");
+        }
+
+        stream = await navigator.mediaDevices.getUserMedia({
+            video: { facingMode: { ideal: "environment" } },
+            audio: false
+        });
+        video.srcObject = stream;
+        emptyNode.hidden = true;
+        captureButton.disabled = false;
+        stopButton.disabled = false;
+        statusNode.textContent = "Camera đang mở. Canh khung ảnh rồi bấm chụp.";
+        return stream;
+    }
+
+    function stopCamera() {
+        if (!stream) {
+            return;
+        }
+
+        for (const track of stream.getTracks()) {
+            track.stop();
+        }
+
+        stream = null;
+        video.srcObject = null;
+        emptyNode.hidden = false;
+        captureButton.disabled = true;
+        stopButton.disabled = true;
+        statusNode.textContent = "Camera đã dừng.";
+    }
+
+    async function captureAndAnalyze() {
+        if (!stream) {
+            await startCamera();
+        }
+
+        if (!video.videoWidth || !video.videoHeight) {
+            statusNode.textContent = "Camera chưa sẵn sàng. Hãy thử lại sau 1 giây.";
+            return;
+        }
+
+        canvas.width = video.videoWidth;
+        canvas.height = video.videoHeight;
+        const context = canvas.getContext("2d");
+        context.drawImage(video, 0, 0, canvas.width, canvas.height);
+
+        const imageDataUrl = canvas.toDataURL("image/jpeg", 0.92);
+        snapshotPreview.src = imageDataUrl;
+        snapshotPreview.hidden = false;
+        snapshotEmpty.hidden = true;
+        resultNode.textContent = "Đang gửi ảnh lên Gemini để phân tích...";
+        statusNode.textContent = "Đang phân tích ảnh...";
+        captureButton.disabled = true;
+
+        try {
+            const response = await fetch("{{ url_for('main.analyze_camera') }}", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    image: imageDataUrl,
+                    prompt: promptNode.value.trim()
+                })
+            });
+            const payload = await response.json();
+            if (!response.ok || !payload.ok) {
+                throw new Error(payload.error || "Không thể phân tích ảnh.");
+            }
+
+            resultNode.textContent = payload.analysis;
+            statusNode.textContent = "Phân tích xong. Bạn có thể chụp ảnh khác để thử tiếp.";
+        } catch (error) {
+            resultNode.textContent = error.message;
+            statusNode.textContent = "Có lỗi khi phân tích ảnh.";
+        } finally {
+            captureButton.disabled = false;
+        }
+    }
+
+    startButton.addEventListener("click", async () => {
+        startButton.disabled = true;
+        statusNode.textContent = "Đang xin quyền truy cập camera...";
+        try {
+            await startCamera();
+        } catch (error) {
+            statusNode.textContent = error.message;
+        } finally {
+            startButton.disabled = false;
+        }
+    });
+
+    captureButton.addEventListener("click", () => {
+        captureAndAnalyze().catch((error) => {
+            resultNode.textContent = error.message;
+            statusNode.textContent = "Không thể chụp ảnh lúc này.";
+            captureButton.disabled = false;
+        });
+    });
+
+    stopButton.addEventListener("click", () => {
+        stopCamera();
+    });
+
+    window.addEventListener("beforeunload", stopCamera);
+</script>
+{% endblock %}

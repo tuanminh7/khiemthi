@@ -24,8 +24,15 @@ class AudioService:
         self.public_base_url = public_base_url.rstrip("/")
         self.output_dir.mkdir(parents=True, exist_ok=True)
 
-    def generate_for_book(self, book: dict, progress_callback: Callable[[dict], None] | None = None) -> dict:
-        text_content = self._extract_text(book)
+    def generate_for_book(
+        self,
+        book: dict,
+        progress_callback: Callable[[dict], None] | None = None,
+        options: dict | None = None,
+    ) -> dict:
+        options = options or {}
+        scope = self._build_scope(book, options)
+        text_content = self._extract_text(book, options)
         normalized_text = self._normalize_text(text_content)
         if len(normalized_text) < 40:
             raise AudioGenerationError("Noi dung trich xuat qua ngan de tao audio co y nghia.")
@@ -47,6 +54,7 @@ class AudioService:
             "audio_estimated_minutes": self._estimate_minutes(normalized_text),
             "audio_url": "",
             "audio_filename": "",
+            "audio_scope": scope,
         }
         if progress_callback:
             progress_callback(initial_meta)
@@ -60,6 +68,7 @@ class AudioService:
 
         language = self._map_language(book.get("language", "vi"))
         audio_parts = []
+        part_prefix = self._build_part_prefix(scope)
         for index, chunk in enumerate(chunks, start=1):
             output_name = f"part-{index:03d}.mp3"
             output_path = book_audio_dir / output_name
@@ -76,7 +85,7 @@ class AudioService:
             audio_parts.append(
                 {
                     "index": index,
-                    "title": f"Phan {index}",
+                    "title": f"{part_prefix}Phan {index}",
                     "filename": output_name,
                     "url": public_url,
                     "characters": len(chunk),
@@ -93,6 +102,7 @@ class AudioService:
                         "audio_completed_parts": index,
                         "audio_total_parts": total_parts,
                         "audio_url": audio_parts[0]["url"],
+                        "audio_scope": scope,
                     }
                 )
 
@@ -107,14 +117,24 @@ class AudioService:
             "audio_estimated_minutes": self._estimate_minutes(normalized_text),
             "audio_filename": audio_parts[0]["filename"] if audio_parts else "",
             "audio_url": audio_parts[0]["url"] if audio_parts else "",
+            "audio_scope": scope,
         }
 
-    def _extract_text(self, book: dict) -> str:
+    def _extract_text(self, book: dict, options: dict | None = None) -> str:
+        options = options or {}
         source_type = (book.get("source_type") or "pdf").lower()
         file_bytes = self._download_source(book)
+        page_range = self._parse_pdf_page_range(options.get("page_range"))
 
         if book.get("source_kind") == "google_doc" or is_google_document_url(book.get("source_url", "")):
+            if page_range:
+                raise AudioGenerationError("Chi ho tro tao audio theo trang cho PDF.")
             return self._extract_txt(file_bytes)
+
+        if page_range:
+            if source_type != "pdf" and not file_bytes.startswith(b"%PDF"):
+                raise AudioGenerationError("Chi ho tro tao audio theo trang cho PDF.")
+            return self._extract_pdf(file_bytes, page_range=page_range)
 
         for extractor in self._build_extractors(source_type, file_bytes):
             try:
@@ -184,7 +204,7 @@ class AudioService:
         return file_bytes.decode("utf-8", errors="ignore")
 
     @staticmethod
-    def _extract_pdf(file_bytes: bytes) -> str:
+    def _extract_pdf(file_bytes: bytes, page_range: tuple[int, int] | None = None) -> str:
         try:
             from pypdf import PdfReader
         except ImportError as exc:
@@ -197,8 +217,20 @@ class AudioService:
         except Exception as exc:
             raise AudioGenerationError("Khong mo duoc file PDF de trich text.") from exc
 
+        total_pages = len(reader.pages)
+        start_index = 0
+        end_index = total_pages
+        if page_range:
+            start_page, end_page = page_range
+            if start_page < 1 or end_page < start_page:
+                raise AudioGenerationError("Khoang trang khong hop le.")
+            if end_page > total_pages:
+                raise AudioGenerationError(f"PDF nay chi co {total_pages} trang.")
+            start_index = start_page - 1
+            end_index = end_page
+
         pages = []
-        for page in reader.pages:
+        for page in reader.pages[start_index:end_index]:
             extracted = page.extract_text() or ""
             if extracted.strip():
                 pages.append(extracted)
@@ -206,7 +238,7 @@ class AudioService:
         text = "\n".join(pages).strip()
         if not text:
             raise AudioGenerationError(
-                "PDF nay khong trich duoc text. Co the day la PDF scan, khi do nen dung OCR."
+                "PDF nay khong trich duoc text trong khoang trang da chon. Co the day la PDF scan, khi do nen dung OCR."
             )
         return text
 
@@ -303,6 +335,42 @@ class AudioService:
     def _estimate_minutes(text: str) -> int:
         word_count = len(text.split())
         return max(1, round(word_count / 145))
+
+    @staticmethod
+    def _parse_pdf_page_range(page_range: dict | None) -> tuple[int, int] | None:
+        if not page_range:
+            return None
+        start_page = page_range.get("start_page")
+        end_page = page_range.get("end_page")
+        if start_page is None or end_page is None:
+            return None
+        return int(start_page), int(end_page)
+
+    @staticmethod
+    def _build_scope(book: dict, options: dict) -> dict:
+        page_range = AudioService._parse_pdf_page_range(options.get("page_range"))
+        label = (options.get("label") or "").strip()
+        if page_range:
+            start_page, end_page = page_range
+            return {
+                "mode": "pages",
+                "label": label or f"Trang {start_page}-{end_page}",
+                "start_page": start_page,
+                "end_page": end_page,
+                "source_type": (book.get("source_type") or "").lower(),
+            }
+        return {
+            "mode": "full",
+            "label": label or "Toan bo sach",
+            "source_type": (book.get("source_type") or "").lower(),
+        }
+
+    @staticmethod
+    def _build_part_prefix(scope: dict) -> str:
+        label = (scope.get("label") or "").strip()
+        if not label:
+            return ""
+        return f"{label} - "
 
     @staticmethod
     def _build_extractors(source_type: str, file_bytes: bytes) -> list:

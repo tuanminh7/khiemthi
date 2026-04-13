@@ -49,17 +49,34 @@ def create_app() -> Flask:
     if not data_file.is_absolute():
         data_file = base_dir / data_file
 
+    users_file = Path(os.getenv("USERS_FILE", str(base_dir / "data" / "users.json")))
+    if not users_file.is_absolute():
+        users_file = base_dir / users_file
+
     audio_dir = Path(os.getenv("AUDIO_DIR", str(base_dir / "static" / "audio")))
     if not audio_dir.is_absolute():
         audio_dir = base_dir / audio_dir
     audio_dir.mkdir(parents=True, exist_ok=True)
 
+    cover_upload_dir = Path(os.getenv("COVER_UPLOAD_DIR", str(base_dir / "static" / "uploads" / "covers")))
+    if not cover_upload_dir.is_absolute():
+        cover_upload_dir = base_dir / cover_upload_dir
+    cover_upload_dir.mkdir(parents=True, exist_ok=True)
+
     app.config.update(
         SECRET_KEY=os.getenv("SECRET_KEY", "dev-secret-key-change-me"),
         DATA_FILE=data_file,
+        USERS_FILE=users_file,
         AUDIO_DIR=audio_dir,
         AUDIO_PUBLIC_URL=os.getenv("AUDIO_PUBLIC_URL", "/media/audio").rstrip("/"),
+        COVER_UPLOAD_DIR=cover_upload_dir,
         APP_TITLE=os.getenv("APP_TITLE", "Thu Vien Sach Noi AI"),
+        ADMIN_USERNAME=os.getenv("ADMIN_USERNAME", "admin").strip(),
+        ADMIN_PASSWORD=os.getenv("ADMIN_PASSWORD", "admin123").strip(),
+        ADMIN_DISPLAY_NAME=os.getenv("ADMIN_DISPLAY_NAME", "Quan tri vien").strip(),
+        GEMINI_API_KEY=os.getenv("GEMINI_API_KEY", "").strip(),
+        GEMINI_MODEL=os.getenv("GEMINI_MODEL", "gemini-2.5-flash").strip(),
+        AUTO_GENERATE_AUDIO_ON_ADD=env_flag("AUTO_GENERATE_AUDIO_ON_ADD", False),
         RECOVER_AUDIO_JOBS_ON_STARTUP=env_flag("RECOVER_AUDIO_JOBS_ON_STARTUP", False),
     )
 

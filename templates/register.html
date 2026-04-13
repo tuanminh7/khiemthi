@@ -1,0 +1,66 @@
+{% extends "base.html" %}
+
+{% block content %}
+<section class="auth-shell auth-shell-register" aria-labelledby="register-title">
+    <div class="panel auth-copy">
+        <p class="eyebrow">Tài khoản người dùng</p>
+        <h1 id="register-title">Tạo tài khoản để bắt đầu gọn gàng hơn</h1>
+        <p class="auth-lead">
+            Đây là tài khoản người dùng thông thường, không có quyền quản trị. Bạn vẫn có thể dùng thư viện và Camera AI mà không cần đăng nhập nếu muốn trải nghiệm nhanh.
+        </p>
+
+        <div class="auth-feature-list">
+            <div class="auth-feature">
+                <strong>Tạo trong vài giây</strong>
+                <span>Chỉ cần tên đăng nhập và mật khẩu tối thiểu 6 ký tự.</span>
+            </div>
+            <div class="auth-feature">
+                <strong>Không phải admin</strong>
+                <span>Tài khoản tạo ở đây không thể truy cập trang quản trị.</span>
+            </div>
+            <div class="auth-feature">
+                <strong>Dùng bình thường</strong>
+                <span>Sau khi tạo xong, bạn sẽ được đăng nhập ngay để tiếp tục sử dụng thư viện.</span>
+            </div>
+        </div>
+    </div>
+
+    <form class="panel auth-form auth-card" method="post" aria-label="Biểu mẫu tạo tài khoản">
+        <div class="auth-card-head">
+            <p class="eyebrow">Bắt đầu</p>
+            <h2>Tạo tài khoản</h2>
+            <p>Điền thông tin bên dưới để có tài khoản người dùng riêng. Phần này hoàn toàn tùy chọn.</p>
+        </div>
+
+        <label>
+            <span>Tên hiển thị</span>
+            <input type="text" name="display_name" autocomplete="name" placeholder="Ví dụ: Minh Tuấn">
+        </label>
+
+        <label>
+            <span>Tên đăng nhập</span>
+            <input type="text" name="username" autocomplete="username" placeholder="minhtuan" required>
+        </label>
+
+        <label>
+            <span>Mật khẩu</span>
+            <input type="password" name="password" autocomplete="new-password" placeholder="Ít nhất 6 ký tự" required>
+        </label>
+
+        <label>
+            <span>Nhập lại mật khẩu</span>
+            <input type="password" name="confirm_password" autocomplete="new-password" placeholder="Nhập lại mật khẩu" required>
+        </label>
+
+        <div class="auth-actions">
+            <button class="button button-primary" type="submit">Tạo tài khoản</button>
+            <a class="button button-secondary" href="{{ url_for('main.index') }}">Dùng không đăng nhập</a>
+        </div>
+
+        <div class="auth-footer">
+            <span>Đã có tài khoản?</span>
+            <a class="inline-link" href="{{ url_for('main.login') }}">Đăng nhập ngay</a>
+        </div>
+    </form>
+</section>
+{% endblock %}

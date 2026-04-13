@@ -11,12 +11,31 @@
         <div class="container nav-shell">
             <a class="brand" href="{{ url_for('main.index') }}" aria-label="Trang chủ Thư Viện Sách Nói AI">
                 <span aria-hidden="true">📚</span>
-                Thư Viện Sách Nói AI
+                <span>Thư Viện Sách Nói AI</span>
             </a>
-            <nav class="nav-links" aria-label="Menu chính">
+
+            <nav class="nav-main" aria-label="Menu chính">
                 <a href="{{ url_for('main.index') }}">Thư viện</a>
-                <a href="{{ url_for('main.admin_books') }}">Quản trị</a>
+                <a href="{{ url_for('main.camera') }}">Camera AI</a>
+                {% if is_admin %}
+                    <a href="{{ url_for('main.admin_books') }}">Quản trị</a>
+                {% endif %}
             </nav>
+
+            <div class="nav-account" aria-label="Tài khoản">
+                {% if current_user %}
+                    <span class="account-chip">
+                        {{ current_user.display_name }}
+                        {% if current_user.role == "admin" %}<small>Admin</small>{% endif %}
+                    </span>
+                    <form method="post" action="{{ url_for('main.logout') }}">
+                        <button class="nav-button" type="submit">Đăng xuất</button>
+                    </form>
+                {% else %}
+                    <a class="nav-button" href="{{ url_for('main.login') }}">Đăng nhập</a>
+                    <a class="nav-button nav-button-strong" href="{{ url_for('main.register') }}">Tạo tài khoản</a>
+                {% endif %}
+            </div>
         </div>
     </header>
 

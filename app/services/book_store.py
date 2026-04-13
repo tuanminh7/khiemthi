@@ -36,37 +36,13 @@ class BookStore:
         return None
 
     def add_book(self, payload: dict) -> dict:
-        title = (payload.get("title") or "").strip()
-        author = (payload.get("author") or "").strip()
-        description = (payload.get("description") or "").strip()
-        category = (payload.get("category") or "").strip()
-        cover_url = (payload.get("cover_url") or "").strip()
-        drive_url = (payload.get("drive_url") or "").strip()
-        source_type = (payload.get("source_type") or "auto").strip().lower()
-        language = (payload.get("language") or "vi").strip().lower()
-
-        if not title:
-            raise BookValidationError("Tieu de sach la bat buoc.")
-        if not drive_url:
-            raise BookValidationError("Ban can nhap link Google Drive cho sach.")
-
-        try:
-            file_id = extract_drive_file_id(drive_url)
-        except DriveLinkError as exc:
-            raise BookValidationError(str(exc)) from exc
-
-        slug = self._slugify(title)
+        details = self._validate_book_details(payload)
+        slug = self._slugify(details["title"])
         book = {
             "id": f"{slug}-{uuid4().hex[:8]}",
-            "title": title,
-            "author": author or "Dang cap nhat",
-            "description": description or "Chua co mo ta cho cuon sach nay.",
-            "category": category or "Chua phan loai",
-            "cover_url": cover_url or "https://placehold.co/640x900?text=Sach+Noi",
-            "source_type": source_type,
-            "language": language,
+            **details,
             "created_at": datetime.now(timezone.utc).isoformat(),
-            "audio_status": "queued",
+            "audio_status": "not_generated",
             "audio_url": "",
             "audio_error": "",
             "audio_progress": 0,
@@ -74,8 +50,6 @@ class BookStore:
             "audio_completed_parts": 0,
             "audio_total_parts": 0,
             "audio_estimated_minutes": 0,
-            "source_url": drive_url,
-            **build_drive_urls(file_id, drive_url),
         }
 
         with self._lock:
@@ -83,6 +57,40 @@ class BookStore:
             books.append(book)
             self._save_books_unlocked(books)
         return book
+
+    def update_book_details(self, book_id: str, payload: dict) -> dict:
+        with self._lock:
+            books = self._load_books_unlocked()
+            for index, book in enumerate(books):
+                if book.get("id") != book_id:
+                    continue
+
+                details = self._validate_book_details(payload, existing=book)
+                source_changed = any(
+                    details.get(key) != book.get(key)
+                    for key in ("source_url", "drive_file_id", "source_type", "language")
+                )
+                updates = details
+                if source_changed:
+                    updates = {
+                        **updates,
+                        "audio_status": "not_generated",
+                        "audio_url": "",
+                        "audio_error": "",
+                        "audio_progress": 0,
+                        "audio_parts": [],
+                        "audio_completed_parts": 0,
+                        "audio_total_parts": 0,
+                        "audio_estimated_minutes": 0,
+                        "audio_filename": "",
+                    }
+
+                merged_book = {**book, **updates}
+                books[index] = merged_book
+                self._save_books_unlocked(books)
+                return self._normalize_book(merged_book)
+
+        raise BookValidationError("Khong tim thay cuon sach can cap nhat.")
 
     def update_book(self, book_id: str, updates: dict) -> dict:
         with self._lock:
@@ -97,6 +105,19 @@ class BookStore:
                 return self._normalize_book(merged_book)
 
         raise BookValidationError("Khong tim thay cuon sach can cap nhat.")
+
+    def delete_book(self, book_id: str) -> dict:
+        with self._lock:
+            books = self._load_books_unlocked()
+            for index, book in enumerate(books):
+                if book.get("id") != book_id:
+                    continue
+
+                deleted_book = books.pop(index)
+                self._save_books_unlocked(books)
+                return self._normalize_book(deleted_book)
+
+        raise BookValidationError("Khong tim thay cuon sach can xoa.")
 
     def _load_books(self) -> list[dict]:
         with self._lock:
@@ -130,6 +151,7 @@ class BookStore:
             "audio_completed_parts": 0,
             "audio_total_parts": 0,
             "audio_estimated_minutes": 0,
+            "audio_scope": {"mode": "full", "label": "Toan bo sach"},
             **book,
         }
 
@@ -142,6 +164,40 @@ class BookStore:
                 pass
 
         return normalized
+
+    @staticmethod
+    def _validate_book_details(payload: dict, existing: dict | None = None) -> dict:
+        existing = existing or {}
+        title = (payload.get("title") or "").strip()
+        author = (payload.get("author") or "").strip()
+        description = (payload.get("description") or "").strip()
+        category = (payload.get("category") or "").strip()
+        cover_url = (payload.get("cover_url") or "").strip() or existing.get("cover_url", "")
+        drive_url = (payload.get("drive_url") or "").strip() or existing.get("source_url", "")
+        source_type = (payload.get("source_type") or existing.get("source_type") or "auto").strip().lower()
+        language = (payload.get("language") or existing.get("language") or "vi").strip().lower()
+
+        if not title:
+            raise BookValidationError("Tieu de sach la bat buoc.")
+        if not drive_url:
+            raise BookValidationError("Ban can nhap link Google Drive cho sach.")
+
+        try:
+            file_id = extract_drive_file_id(drive_url)
+        except DriveLinkError as exc:
+            raise BookValidationError(str(exc)) from exc
+
+        return {
+            "title": title,
+            "author": author or "Dang cap nhat",
+            "description": description or "Chua co mo ta cho cuon sach nay.",
+            "category": category or "Chua phan loai",
+            "cover_url": cover_url or "https://placehold.co/640x900?text=Sach+Noi",
+            "source_type": source_type,
+            "language": language,
+            "source_url": drive_url,
+            **build_drive_urls(file_id, drive_url),
+        }
 
     @staticmethod
     def _slugify(value: str) -> str:
