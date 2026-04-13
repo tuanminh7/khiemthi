@@ -16,6 +16,9 @@
             <span>Nguồn: {{ book.source_type|upper }}</span>
             <span>Ngôn ngữ: {{ book.language|upper }}</span>
             <span>Trạng thái Audio: {{ book.audio_status or "chưa tạo" }}</span>
+            {% if book.audio_scope and book.audio_scope.label %}
+                <span>Phạm vi audio: {{ book.audio_scope.label }}</span>
+            {% endif %}
             {% if book.audio_total_parts %}
                 <span>Tiến độ: {{ book.audio_completed_parts or 0 }}/{{ book.audio_total_parts }} phần</span>
             {% endif %}
@@ -39,26 +42,25 @@
         <div class="action-row">
             <a class="button button-primary" href="{{ book.drive_view_url }}" target="_blank" rel="noreferrer">Mở trên Drive</a>
             <a class="button button-secondary" href="{{ book.drive_download_url }}" target="_blank" rel="noreferrer">Tải tệp</a>
-            <form method="post" action="{{ url_for('main.generate_audio', book_id=book.id) }}">
-                <input type="hidden" name="next" value="{{ url_for('main.book_detail', book_id=book.id) }}">
-                <button
-                    class="button button-primary"
-                    type="submit"
-                    {% if book.audio_status in ["queued", "processing"] %}disabled{% endif %}
-                    aria-label="Bắt đầu tạo âm thanh cho sách này"
-                >
-                    {% if book.audio_status == "ready" %}Tạo lại Audio{% else %}Tạo Audio{% endif %}
-                </button>
-            </form>
         </div>
 
         {% if book.audio_status in ["queued", "processing"] %}
-            <p class="inline-note" role="status">Audio đang được tạo trong nền. Bạn có thể quay lại sau hoặc tải lại trang này.</p>
+            <p class="inline-note" role="status">Audio đang được tạo trong nền. Bạn có thể quay lại sau hoặc tải lại trang này để xem phần trăm mới nhất.</p>
+        {% elif book.audio_status == "not_generated" %}
+            <p class="inline-note" role="status">Sách này chưa có audio sẵn. Quản trị viên cần vào trang admin để tạo audio trước khi người dùng nghe.</p>
         {% endif %}
 
-        {% if book.audio_parts %}
+        {% if book.audio_status == "ready" and book.audio_parts %}
             <section class="audio-panel" aria-labelledby="audio-title">
-                <p class="eyebrow" id="audio-title">Sách nói (Audio)</p>
+                <div class="audio-panel-head">
+                    <p class="eyebrow" id="audio-title">Sách nói (Audio)</p>
+                    <div class="speed-controls" aria-label="Tốc độ phát">
+                        <button class="speed-button active" type="button" data-speed="1">1x</button>
+                        <button class="speed-button" type="button" data-speed="1.5">1.5x</button>
+                        <button class="speed-button" type="button" data-speed="2">2x</button>
+                        <button class="speed-button" type="button" data-speed="3">3x</button>
+                    </div>
+                </div>
                 <div class="audio-part-list">
                     {% for part in book.audio_parts %}
                         <article class="audio-part">
@@ -81,7 +83,46 @@
 
 {% if book.audio_status in ["queued", "processing"] %}
     <script>
-        window.setTimeout(() => window.location.reload(), 5000);
+        window.setTimeout(() => {
+            const players = Array.from(document.querySelectorAll(".audio-player"));
+            const hasActivePlayback = players.some((player) => !player.paused && !player.ended);
+            if (!hasActivePlayback) {
+                window.location.reload();
+            }
+        }, 5000);
+    </script>
+{% endif %}
+
+{% if book.audio_status == "ready" and book.audio_parts %}
+    <script>
+        (function () {
+            const speedButtons = Array.from(document.querySelectorAll(".speed-button"));
+            const players = Array.from(document.querySelectorAll(".audio-player"));
+            let currentRate = 1;
+
+            function applyRate(rate) {
+                currentRate = rate;
+                players.forEach((player) => {
+                    player.playbackRate = rate;
+                });
+                speedButtons.forEach((button) => {
+                    button.classList.toggle("active", Number(button.dataset.speed) === rate);
+                });
+            }
+
+            speedButtons.forEach((button) => {
+                button.addEventListener("click", () => {
+                    applyRate(Number(button.dataset.speed));
+                });
+            });
+
+            players.forEach((player) => {
+                player.addEventListener("play", () => {
+                    player.playbackRate = currentRate;
+                });
+                player.playbackRate = currentRate;
+            });
+        }());
     </script>
 {% endif %}
 

@@ -1,125 +1,79 @@
 [
   {
-    "id": "dac-nhan-tam-demo001",
-    "title": "Dac Nhan Tam",
-    "author": "Dale Carnegie",
-    "description": "Sach mau cho MVP. Admin co the them sach moi bang link Google Drive de mo rong thu vien.",
-    "category": "Ky nang song",
-    "cover_url": "https://placehold.co/640x900/f5ede0/1e1e1e?text=Dac+Nhan+Tam",
+    "id": "nhung-em-trong-rung-c732295c",
+    "title": "Những đêm trong rừng",
+    "author": "Hoàng Thị Trúc Ly",
+    "description": "truyện ngắn",
+    "category": "truyện ngắn",
+    "cover_url": "/static/uploads/covers/f7cb8d63836e403189875207ceb4b799.png",
     "source_type": "pdf",
     "language": "vi",
-    "created_at": "2026-04-13T10:00:00+00:00",
-    "audio_status": "not_generated",
-    "audio_url": "",
-    "audio_error": "",
-    "source_url": "https://drive.google.com/file/d/1DemoDriveFileId1234567890/view?usp=sharing",
-    "drive_file_id": "1DemoDriveFileId1234567890",
-    "drive_view_url": "https://drive.google.com/file/d/1DemoDriveFileId1234567890/view",
-    "drive_preview_url": "https://drive.google.com/file/d/1DemoDriveFileId1234567890/preview",
-    "drive_download_url": "https://drive.google.com/uc?export=download&id=1DemoDriveFileId1234567890"
-  },
-  {
-    "id": "test-95a1b43b",
-    "title": "test",
-    "author": "tuan",
-    "description": "không có",
-    "category": "sách",
-    "cover_url": "https://placehold.co/640x900?text=Sach+Noi",
-    "source_type": "pdf",
-    "language": "vi",
-    "created_at": "2026-04-13T10:37:29.122999+00:00",
+    "source_url": "https://drive.google.com/file/d/1Kx541D1n3KMFTnl0StrG4LA9fEDSFVk1/view?usp=sharing",
+    "drive_file_id": "1Kx541D1n3KMFTnl0StrG4LA9fEDSFVk1",
+    "source_kind": "drive_file",
+    "drive_view_url": "https://drive.google.com/file/d/1Kx541D1n3KMFTnl0StrG4LA9fEDSFVk1/view",
+    "drive_preview_url": "https://drive.google.com/file/d/1Kx541D1n3KMFTnl0StrG4LA9fEDSFVk1/preview",
+    "drive_download_url": "https://drive.google.com/uc?export=download&id=1Kx541D1n3KMFTnl0StrG4LA9fEDSFVk1",
+    "created_at": "2026-04-13T13:22:38.662258+00:00",
     "audio_status": "ready",
-    "audio_url": "/static/audio/test-95a1b43b/part-001.mp3",
+    "audio_url": "/media/audio/nhung-em-trong-rung-c732295c/part-001.mp3",
     "audio_error": "",
-    "source_url": "https://docs.google.com/document/d/1KhXFkH1X1KPDN5-mik77tgda7cHyqJrA/edit?usp=sharing&ouid=110351607490036124767&rtpof=true&sd=true",
-    "drive_file_id": "1KhXFkH1X1KPDN5-mik77tgda7cHyqJrA",
-    "drive_view_url": "https://drive.google.com/file/d/1KhXFkH1X1KPDN5-mik77tgda7cHyqJrA/view",
-    "drive_preview_url": "https://drive.google.com/file/d/1KhXFkH1X1KPDN5-mik77tgda7cHyqJrA/preview",
-    "drive_download_url": "https://drive.google.com/uc?export=download&id=1KhXFkH1X1KPDN5-mik77tgda7cHyqJrA",
     "audio_progress": 100,
     "audio_parts": [
       {
         "index": 1,
-        "title": "Phan 1",
+        "title": "chương 1 - Phan 1",
         "filename": "part-001.mp3",
-        "url": "/static/audio/test-95a1b43b/part-001.mp3",
-        "characters": 3474
+        "url": "/media/audio/nhung-em-trong-rung-c732295c/part-001.mp3",
+        "characters": 3482
       },
       {
         "index": 2,
-        "title": "Phan 2",
+        "title": "chương 1 - Phan 2",
         "filename": "part-002.mp3",
-        "url": "/static/audio/test-95a1b43b/part-002.mp3",
-        "characters": 3445
+        "url": "/media/audio/nhung-em-trong-rung-c732295c/part-002.mp3",
+        "characters": 3450
       },
       {
         "index": 3,
-        "title": "Phan 3",
+        "title": "chương 1 - Phan 3",
         "filename": "part-003.mp3",
-        "url": "/static/audio/test-95a1b43b/part-003.mp3",
-        "characters": 3458
+        "url": "/media/audio/nhung-em-trong-rung-c732295c/part-003.mp3",
+        "characters": 3401
       },
       {
         "index": 4,
-        "title": "Phan 4",
+        "title": "chương 1 - Phan 4",
         "filename": "part-004.mp3",
-        "url": "/static/audio/test-95a1b43b/part-004.mp3",
-        "characters": 3479
+        "url": "/media/audio/nhung-em-trong-rung-c732295c/part-004.mp3",
+        "characters": 3445
       },
       {
         "index": 5,
-        "title": "Phan 5",
+        "title": "chương 1 - Phan 5",
         "filename": "part-005.mp3",
-        "url": "/static/audio/test-95a1b43b/part-005.mp3",
-        "characters": 3440
+        "url": "/media/audio/nhung-em-trong-rung-c732295c/part-005.mp3",
+        "characters": 3481
       },
       {
         "index": 6,
-        "title": "Phan 6",
+        "title": "chương 1 - Phan 6",
         "filename": "part-006.mp3",
-        "url": "/static/audio/test-95a1b43b/part-006.mp3",
-        "characters": 3380
-      },
-      {
-        "index": 7,
-        "title": "Phan 7",
-        "filename": "part-007.mp3",
-        "url": "/static/audio/test-95a1b43b/part-007.mp3",
-        "characters": 3457
-      },
-      {
-        "index": 8,
-        "title": "Phan 8",
-        "filename": "part-008.mp3",
-        "url": "/static/audio/test-95a1b43b/part-008.mp3",
-        "characters": 3484
-      },
-      {
-        "index": 9,
-        "title": "Phan 9",
-        "filename": "part-009.mp3",
-        "url": "/static/audio/test-95a1b43b/part-009.mp3",
-        "characters": 3500
-      },
-      {
-        "index": 10,
-        "title": "Phan 10",
-        "filename": "part-010.mp3",
-        "url": "/static/audio/test-95a1b43b/part-010.mp3",
-        "characters": 3310
-      },
-      {
-        "index": 11,
-        "title": "Phan 11",
-        "filename": "part-011.mp3",
-        "url": "/static/audio/test-95a1b43b/part-011.mp3",
-        "characters": 1281
+        "url": "/media/audio/nhung-em-trong-rung-c732295c/part-006.mp3",
+        "characters": 2086
       }
     ],
-    "audio_completed_parts": 11,
-    "audio_total_parts": 11,
-    "audio_estimated_minutes": 53,
+    "audio_completed_parts": 6,
+    "audio_total_parts": 6,
+    "audio_estimated_minutes": 30,
     "audio_filename": "part-001.mp3",
-    "audio_generated_at": "2026-04-13T11:18:16.079641+00:00"
+    "audio_scope": {
+      "mode": "pages",
+      "label": "chương 1",
+      "start_page": 2,
+      "end_page": 10,
+      "source_type": "pdf"
+    },
+    "audio_generated_at": "2026-04-13T13:28:12.947109+00:00"
   }
 ]

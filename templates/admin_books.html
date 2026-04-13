@@ -1,101 +1,178 @@
 {% extends "base.html" %}
 
+{% set form_book = editing_book or {} %}
+{% set is_editing = editing_book is not none %}
+
 {% block content %}
 <section class="section-head" aria-labelledby="admin-title">
     <div>
         <p class="eyebrow">Quản trị viên</p>
-        <h1 id="admin-title">Thêm sách mới bằng Google Drive</h1>
+        <h1 id="admin-title">{% if is_editing %}Sửa sách{% else %}Thêm sách mới{% endif %}</h1>
         <p class="hero-copy">
-            Sau khi lưu sách, hệ thống sẽ tự đưa sách vào hàng đợi tạo âm thanh nên bạn không cần chờ.
-            Hiện hỗ trợ Google Docs, PDF, DOCX và TXT nếu tệp có quyền xem công khai.
+            Trang này dành cho quản trị viên
         </p>
     </div>
+    {% if is_editing %}
+        <a class="button button-secondary" href="{{ url_for('main.admin_books') }}">Hủy sửa</a>
+    {% endif %}
 </section>
 
 <section class="admin-layout">
-    <form class="panel form-grid" method="post" aria-label="Biểu mẫu thêm sách mới">
+    <form class="panel form-grid" method="post" action="{{ form_action }}" enctype="multipart/form-data" aria-label="Biểu mẫu quản lý sách">
         <label>
             <span>Tiêu đề sách</span>
-            <input type="text" name="title" placeholder="Ví dụ: Nhà Giả Kim" required>
+            <input type="text" name="title" value="{{ form_book.title or '' }}" placeholder="Ví dụ: Nhà Giả Kim" required>
         </label>
 
         <label>
             <span>Tác giả</span>
-            <input type="text" name="author" placeholder="Ví dụ: Paulo Coelho">
+            <input type="text" name="author" value="{{ form_book.author or '' }}" placeholder="Ví dụ: Paulo Coelho">
         </label>
 
         <label>
             <span>Thể loại</span>
-            <input type="text" name="category" placeholder="Tiểu thuyết, kỹ năng, học tập...">
+            <input type="text" name="category" value="{{ form_book.category or '' }}" placeholder="Tiểu thuyết, kỹ năng, học tập...">
         </label>
 
         <label>
             <span>Loại nguồn</span>
+            {% set selected_type = form_book.source_type or 'auto' %}
             <select name="source_type" aria-label="Chọn loại tệp nguồn">
-                <option value="auto">Tự động nhận diện</option>
-                <option value="pdf">PDF</option>
-                <option value="docx">DOCX</option>
-                <option value="txt">TXT</option>
+                <option value="auto" {% if selected_type == 'auto' %}selected{% endif %}>Tự động nhận diện</option>
+                <option value="pdf" {% if selected_type == 'pdf' %}selected{% endif %}>PDF</option>
+                <option value="docx" {% if selected_type == 'docx' %}selected{% endif %}>DOCX</option>
+                <option value="txt" {% if selected_type == 'txt' %}selected{% endif %}>TXT</option>
             </select>
         </label>
 
         <label>
             <span>Ngôn ngữ</span>
-            <input type="text" name="language" value="vi" placeholder="vi">
+            <input type="text" name="language" value="{{ form_book.language or 'vi' }}" placeholder="vi">
         </label>
 
         <label>
-            <span>Đường dẫn ảnh bìa</span>
-            <input type="url" name="cover_url" placeholder="https://...">
+            <span>Ảnh bìa sách</span>
+            <input type="file" name="cover_file" accept="image/png,image/jpeg,image/webp,image/gif">
+            <small class="field-hint">
+                {% if is_editing and form_book.cover_url %}
+                    Đang có ảnh bìa. Chọn ảnh mới nếu muốn thay.
+                {% else %}
+                    Chọn ảnh từ máy của bạn. Hỗ trợ JPG, PNG, WEBP hoặc GIF.
+                {% endif %}
+            </small>
         </label>
+
+        {% if is_editing and form_book.cover_url %}
+            <div class="full-span admin-cover-preview">
+                <img src="{{ form_book.cover_url }}" alt="Ảnh bìa hiện tại của {{ form_book.title }}">
+                <span>Ảnh bìa hiện tại</span>
+            </div>
+        {% endif %}
 
         <label class="full-span">
             <span>Link Google Drive</span>
-            <input type="text" name="drive_url" placeholder="https://drive.google.com/file/d/.../view" required>
+            <input type="text" name="drive_url" value="{{ form_book.source_url or '' }}" placeholder="https://drive.google.com/file/d/.../view" required>
         </label>
 
         <label class="full-span">
             <span>Mô tả nội dung</span>
-            <textarea name="description" rows="5" placeholder="Tóm tắt nội dung, đối tượng phù hợp, ghi chú TTS..."></textarea>
+            <textarea name="description" rows="5" placeholder="Tóm tắt nội dung, đối tượng phù hợp, ghi chú TTS...">{{ form_book.description or '' }}</textarea>
         </label>
 
-        <div class="full-span">
-            <button class="button button-primary" type="submit">Lưu sách và Tạo Audio</button>
+        <div class="full-span action-row">
+            <button class="button button-primary" type="submit">
+                {% if is_editing %}Lưu thay đổi{% else %}Lưu sách{% endif %}
+            </button>
+            {% if is_editing %}
+                <a class="button button-secondary" href="{{ url_for('main.admin_books') }}">Không sửa nữa</a>
+            {% endif %}
         </div>
     </form>
 
     <aside class="panel admin-side" aria-labelledby="side-title">
-        <h2 id="side-title">Danh sách hiện tại</h2>
+        <h2 id="side-title">Quản lý sách</h2>
         <div class="admin-list" role="list">
             {% for book in books %}
-                <div class="admin-list-item" role="listitem">
-                    <a href="{{ url_for('main.book_detail', book_id=book.id) }}" aria-label="Xem chi tiết sách {{ book.title }}">
-                        <strong>{{ book.title }}</strong>
-                        <span style="display: block; font-size: 0.9rem; color: var(--muted);">{{ book.author }}</span>
-                        <small style="display: block; margin-top: 4px;">{{ book.source_type|upper }} - {{ book.category }}</small>
-                    </a>
+                <article class="admin-list-item" role="listitem">
+                    <div class="admin-book-row">
+                        <img class="admin-book-cover" src="{{ book.cover_url }}" alt="Bìa sách {{ book.title }}">
+                        <div>
+                            <a href="{{ url_for('main.book_detail', book_id=book.id) }}" aria-label="Xem chi tiết sách {{ book.title }}">
+                                <strong>{{ book.title }}</strong>
+                            </a>
+                            <span class="admin-book-meta">{{ book.author }}</span>
+                            <small>{{ book.source_type|upper }} - {{ book.category }}</small>
+                            <div class="admin-audio-status">
+                                {% if book.audio_status == "ready" %}
+                                    <span class="status-pill status-ready">Audio sẵn sàng</span>
+                                {% elif book.audio_status in ["queued", "processing"] %}
+                                    <span class="status-pill status-processing">Đang tạo audio {{ book.audio_progress or 0 }}%</span>
+                                {% elif book.audio_status == "error" %}
+                                    <span class="status-pill status-error">Tạo audio lỗi</span>
+                                {% else %}
+                                    <span class="status-pill status-muted">Chưa tạo audio</span>
+                                {% endif %}
+
+                                {% if book.audio_scope and book.audio_scope.label %}
+                                    <small>Phạm vi: {{ book.audio_scope.label }}</small>
+                                {% endif %}
+
+                                {% if book.audio_status in ["queued", "processing", "ready"] %}
+                                    <div class="mini-progress admin-progress" role="progressbar" aria-valuenow="{{ book.audio_progress or 0 }}" aria-valuemin="0" aria-valuemax="100">
+                                        <div class="mini-progress-fill" style="width: {{ book.audio_progress or 0 }}%;"></div>
+                                    </div>
+                                    <small>
+                                        Tiến độ: {{ book.audio_progress or 0 }}%
+                                        {% if book.audio_total_parts %}
+                                            • {{ book.audio_completed_parts or 0 }}/{{ book.audio_total_parts }} phần
+                                        {% endif %}
+                                    </small>
+                                {% endif %}
+
+                                {% if book.audio_error %}
+                                    <small class="inline-error">{{ book.audio_error }}</small>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+
                     <div class="admin-actions">
-                        <small aria-label="Trạng thái âm thanh">
-                            Audio: {{ book.audio_status or "chưa tạo" }}
-                            {% if book.audio_progress %} - {{ book.audio_progress }}%{% endif %}
-                        </small>
-                        <form method="post" action="{{ url_for('main.generate_audio', book_id=book.id) }}">
+                        <a class="button button-secondary button-small" href="{{ url_for('main.edit_book', book_id=book.id) }}">Sửa</a>
+                        <form class="admin-audio-form" method="post" action="{{ url_for('main.generate_audio', book_id=book.id) }}">
                             <input type="hidden" name="next" value="{{ url_for('main.admin_books') }}">
+                            <input class="admin-mini-input" type="text" name="audio_label" placeholder="Ví dụ: Chương 1">
+                            <input class="admin-mini-input" type="number" min="1" name="audio_start_page" placeholder="Từ trang">
+                            <input class="admin-mini-input" type="number" min="1" name="audio_end_page" placeholder="Đến trang">
                             <button
                                 class="button button-secondary button-small"
                                 type="submit"
                                 {% if book.audio_status in ["queued", "processing"] %}disabled{% endif %}
                                 aria-label="Tạo lại âm thanh cho {{ book.title }}"
                             >
-                                {% if book.audio_status == "ready" %}Làm mới Audio{% else %}Tạo Audio{% endif %}
+                                {% if book.audio_status in ["queued", "processing"] %}
+                                    Đang tạo...
+                                {% elif book.audio_status == "ready" %}
+                                    Tạo lại Audio
+                                {% else %}
+                                    Tạo Audio
+                                {% endif %}
                             </button>
+                            <small class="field-hint">Để trống 2 ô trang nếu muốn tạo toàn bộ. Khoảng trang hiện chỉ áp dụng cho PDF.</small>
+                        </form>
+                        <form method="post" action="{{ url_for('main.delete_book', book_id=book.id) }}" onsubmit="return confirm('Xóa sách này khỏi thư viện? Audio và ảnh bìa đã upload cũng sẽ bị xóa.');">
+                            <button class="button button-danger button-small" type="submit">Xóa</button>
                         </form>
                     </div>
-                </div>
+                </article>
             {% else %}
                 <p>Chưa có cuốn sách nào được thêm.</p>
             {% endfor %}
         </div>
     </aside>
 </section>
+{% if has_active_audio %}
+    <script>
+        window.setTimeout(() => window.location.reload(), 5000);
+    </script>
+{% endif %}
 {% endblock %}
